@@ -2,13 +2,19 @@
   "name": "cesium-test",
   "version": "0.1.0",
   "private": true,
+  "homepage": "http://Liquid-Zhangliquan.github.io/cesium-test",
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
-    "lint": "vue-cli-service lint"
+    "lint": "vue-cli-service lint",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d dist"
   },
   "dependencies": {
+    "cesium": "^1.62.0",
     "core-js": "^2.6.5",
+    "gh-pages": "^2.1.1",
+    "maptalks": "^0.45.1",
     "vue": "^2.6.10"
   },
   "devDependencies": {
