@@ -26,27 +26,36 @@ export default {
     maptalksInit() {
       Cesium.BingMapsApi.defaultKey = 'ApD3P1iMWEcs7okcQD2-idlF4bgGLMqF_p6ZKYovVeX80cmjpWzR5EZs9E_I2tXn';
       const map = new maptalks.Map('maptalks-container', {
-        center: [116.98747630488648, 36.23262766434629], //[-1.25968, 51.74625],//[121.392825741, 31.1456282355],
+        center: [116.96331820577404, 36.256177496939216], //[-1.25968, 51.74625],//[121.392825741, 31.1456282355],
         zoom: 15,
-        centerCross: true,
-        baseLayer: new maptalks.TileLayer('googlemap', {
-          style: 'Satellite',
-          urlTemplate: 'http://www.google.cn/maps/vt?lyrs=s@189&gl=cn&x={x}&y={y}&z={z}'
-        })
+        pitch: 64,
+        bearing: -48.,
+        // fov: 36.86989764584402,
+        centerCross: true
+        // baseLayer: new maptalks.TileLayer('googlemap', {
+        //   style: 'Satellite',
+        //   urlTemplate: 'http://www.google.cn/maps/vt?lyrs=s@189&gl=cn&x={x}&y={y}&z={z}'
+        // })
       });
 
       const cesiumLayer = new CesiumLayer('cesium', { gray: false }).addTo(map);
       //获取cesium scene对象
       const scene = cesiumLayer.getCesiumScene();
-      scene.terrainProvider = new Cesium.createWorldTerrain();
+      
+
+      const maptms = new Cesium.createTileMapServiceImageryProvider({
+        url: 'maps/vt?lyrs=s@189&gl=cn&x={x}&y={y}&z={z}'
+      });
+      scene.imageryLayers.addImageryProvider(maptms);
 
       // 加载terrain高程数据
-      // const terrainLayer = new Cesium.CesiumTerrainProvider({
-      //   url: 'http://127.0.0.1:4000/srtm_60_05'
-      //   // url: 'http://assets.agi.com/stk-terraub/world',
-      //   // requestVertexNormals: true,
-      // });
-      // scene.terrainProvider = terrainLayer;
+      // scene.terrainProvider = new Cesium.createWorldTerrain();
+      const terrainLayer = new Cesium.CesiumTerrainProvider({
+        url: 'srtm_60_05'
+        // url: 'http://assets.agi.com/stk-terraub/world',
+        // requestVertexNormals: true,
+      });
+      scene.terrainProvider = terrainLayer;
     },
     cesiumInit() {
       const viewerOption = {

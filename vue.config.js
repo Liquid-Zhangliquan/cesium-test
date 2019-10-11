@@ -53,6 +53,14 @@ module.exports = {
           '^/cva_w': ''
         }
       },
+      '/maps': {
+        target: 'http://www.google.cn/maps',
+        ws: true,
+        changeOrigin: true,
+        pathRewrite: {
+          '^/maps': ''
+        }
+      },
     }
   }
 }

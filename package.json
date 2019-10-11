@@ -5,6 +5,7 @@
   "homepage": "http://Liquid-Zhangliquan.github.io/cesium-test",
   "scripts": {
     "serve": "vue-cli-service serve",
+    "dev": "npm run serve",
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint",
     "predeploy": "npm run build",
