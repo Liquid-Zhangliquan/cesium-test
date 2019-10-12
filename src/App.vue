@@ -44,7 +44,7 @@ export default {
       
 
       const maptms = new Cesium.createTileMapServiceImageryProvider({
-        url: 'maps/vt?lyrs=s@189&gl=cn&x={x}&y={y}&z={z}'
+        url: 'https://www.google.cn/maps/vt?lyrs=s@189&gl=cn&x={x}&y={y}&z={z}'
       });
       scene.imageryLayers.addImageryProvider(maptms);
 
