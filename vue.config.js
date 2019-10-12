@@ -6,7 +6,7 @@ let cesiumSource = './node_modules/cesium/Source'
 let cesiumWorkers = '../Build/Cesium/Workers'
 
 module.exports = {
-  publicPath: '/',
+  publicPath: '',
   pages: {
     index: {
       entry: 'src/main.js',

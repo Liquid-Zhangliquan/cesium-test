@@ -49,13 +49,13 @@ export default {
       scene.imageryLayers.addImageryProvider(maptms);
 
       // 加载terrain高程数据
-      // scene.terrainProvider = new Cesium.createWorldTerrain();
-      const terrainLayer = new Cesium.CesiumTerrainProvider({
-        url: 'srtm_60_05'
-        // url: 'http://assets.agi.com/stk-terraub/world',
-        // requestVertexNormals: true,
-      });
-      scene.terrainProvider = terrainLayer;
+      scene.terrainProvider = new Cesium.createWorldTerrain();
+      // const terrainLayer = new Cesium.CesiumTerrainProvider({
+      //   url: 'srtm_60_05'
+      //   // url: 'http://assets.agi.com/stk-terraub/world',
+      //   // requestVertexNormals: true,
+      // });
+      // scene.terrainProvider = terrainLayer;
     },
     cesiumInit() {
       const viewerOption = {
@@ -80,7 +80,7 @@ export default {
       viewer._cesiumWidget._creditContainer.style.display = 'none'; // 隐藏版权
       this.viewer = viewer;
 
-      this.loadImager();
+      // this.loadImager();
 
       // 飞行至指定位置
       viewer.camera.flyTo({
