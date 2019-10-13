@@ -12,10 +12,13 @@
     "deploy": "gh-pages -d dist"
   },
   "dependencies": {
+    "bezier-js": "^2.4.4",
     "cesium": "^1.62.0",
     "core-js": "^2.6.5",
     "gh-pages": "^2.1.1",
     "maptalks": "^0.45.1",
+    "maptalks.three": "^0.6.2",
+    "three": "^0.109.0",
     "vue": "^2.6.10"
   },
   "devDependencies": {
