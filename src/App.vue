@@ -199,19 +199,277 @@ export default {
     initCameraEnd() {
       const viewer = this.viewer;
       this.camera = viewer.camera;
-      viewer.scene.camera.moveEnd.addEventListener(() => {
-        // console.log(this.camera);
-        // const camera = this.camera;
-        // const heading = camera.heading;
-        // const pitch = camera.pitch;
-        // const roll = camera.roll;
-        // const position = camera.position;
-        // const cartographic = new Cesium.Cartographic.fromCartesian(position);
-        // const longitude = new Cesium.Math.toDegrees(cartographic.longitude);
-        // const latitude = new Cesium.Math.toDegrees(cartographic.latitude);
-        // const height = cartographic.height;
-        // console.log(longitude + ',' + latitude + ',' + height + ',' + heading + ',' + pitch + ',' + roll);
+      viewer.scene.camera.moveEnd.addEventListener(evt => {
+        console.log(this.camera);
+        const camera = this.camera;
+        const heading = camera.heading;
+        const pitch = camera.pitch;
+        const roll = camera.roll;
+        const position = camera.position;
+        const cartographic = Cesium.Cartographic.fromCartesian(position);
+        const longitude = Cesium.Math.toDegrees(cartographic.longitude);
+        const latitude = Cesium.Math.toDegrees(cartographic.latitude);
+        const height = cartographic.height;
+        console.log(longitude + ',' + latitude + ',' + height + ',' + heading + ',' + pitch + ',' + roll);
       });
+    },
+    initScenePick() {
+      const me = this;
+      const viewer = this.viewer;
+      const scene = viewer.scene;
+      const points = [];
+      const points2 = [];
+      const points3 = [];
+      const positions = [];
+      this.sceneEventHandler = new Cesium.ScreenSpaceEventHandler(scene.canvas);
+      this.sceneEventHandler.setInputAction(movement => {
+        const ray = viewer.camera.getPickRay(movement.position);
+        const cartesian = viewer.scene.globe.pick(ray, viewer.scene);
+        const cartographic = Cesium.Cartographic.fromCartesian(cartesian);
+        const lng = Cesium.Math.toDegrees(cartographic.longitude);
+        const lat = Cesium.Math.toDegrees(cartographic.latitude);
+        const height = cartographic.height;
+        points.push({ x: lng, y: lat, z: height + 42 });
+        points2.push({ x: lng + 0.00005, y: lat + 0.00005, z: height + 42 });
+        points3.push({ x: lng - 0.00005, y: lat - 0.00005, z: height + 42 });
+        if (points.length === 2) {
+          // 摆动区间
+          me.swingArr = [
+            { x: (points2[0].x + points2[1].x) / 2, y: (points2[0].y + points2[1].y) / 2, z: height + 28 },
+            { x: (points3[0].x + points3[1].x) / 2, y: (points3[0].y + points3[1].y) / 2, z: height + 28 }
+          ];
+          const p11 = points[0];
+          const p12 = { x: (points[0].x + points[1].x) / 2, y: (points[0].y + points[1].y) / 2, z: height + 20 };
+          const p13 = points[1];
+          this.loadLine([p11, p12, p13]);
+          const p21 = points2[0];
+          const p22 = { x: (points2[0].x + points2[1].x) / 2, y: (points2[0].y + points2[1].y) / 2, z: height + 20 };
+          const p23 = points2[1];
+          this.loadLine([p21, p22, p23]);
+          const p31 = points3[0];
+          const p32 = { x: (points3[0].x + points3[1].x) / 2, y: (points3[0].y + points3[1].y) / 2, z: height + 20 };
+          const p33 = points3[1];
+          this.loadLine([p31, p32, p33]);
+        }
+        positions.push(lng, lat);
+        console.log(positions);
+        const worldPostion = scene.pickPosition(movement.position);
+        const cartographic1 = Cesium.Cartographic.fromCartesian(worldPostion);
+        console.log(cartographic + ',' + cartographic1);
+        this.addGltfByEntities(worldPostion);
+      }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+    },
+    addGltfByPrimitives(position) {
+      // 异步加载模型
+      const viewer = this.viewer;
+      const modelMatrix = new Cesium.Transforms.eastNorthUpToFixedFrame(position);
+      const model = viewer.scene.primitives.add(
+        new Cesium.Model.fromGltf({
+          url: 'srtm_60_05/电线杆2.glb', // 模型文件相对路径 ，支持gltf和glb两种文件格式
+          modelMatrix,
+          scale: 50 // 调整模型在地图中的大小
+        })
+      );
+    },
+    addGltfByEntities(position) {
+      // 同步加载模型
+      const viewer = this.viewer;
+      // viewer.entities.removeAll();
+
+      // const position = Cesium.Cartesian3.fromDegrees(-123.0744619, 44.0503706, height);
+      const heading = Cesium.Math.toRadians(0);
+      const pitch = 0;
+      const roll = 0;
+      const hpr = new Cesium.HeadingPitchRoll(heading, pitch, roll);
+      const orientation = Cesium.Transforms.headingPitchRollQuaternion(position, hpr);
+
+      const url = 'srtm_60_05/电线杆1.glb';
+      const entity = viewer.entities.add({
+        name: url,
+        position,
+        orientation,
+        model: {
+          uri: url,
+          scale: 0.6,
+          // minimumPixelSize: 200,
+          // maximumScale: 250,
+          runAnimations: true, // 是否显示动画
+          clampAnimations: true, // 是否保持最后一针的动画
+          // color:Cesium.Color.RED,// 颜色
+          color: Cesium.Color.fromAlpha(Cesium.Color.RED, parseFloat(1.0)), // 包含透明度的颜色
+          colorBlendMode: Cesium.ColorBlendMode.MIX, // 常用的有三个HIGHLIGHT,REPLACE,MIX
+          colorBlendAmount: 0.1 // 这个属性必须是MIX混合属性才能生效,见colorBlendMode
+        }
+      });
+      // viewer.trackedEntity = entity;
+    },
+    loadLine(positions) {
+      // positions [{x,y,z},{x,y,z}...]  points [x,y,z,x,y,z...]
+      const viewer = this.viewer;
+      const points = this.getBezier(positions);
+      const polelineEntity = viewer.entities.add({
+        name: 'Orange line with black outline at height and following the surface',
+        polyline: {
+          positions: Cesium.Cartesian3.fromDegreesArrayHeights(points),
+          width: 2,
+          material: new Cesium.PolylineOutlineMaterialProperty({
+            color: Cesium.Color.fromBytes(127, 127, 127, 204),
+            outlineWidth: 1,
+            arcType: Cesium.ArcType.RHUMB,
+            outlineColor: Cesium.Color.fromBytes(127, 127, 127, 204)
+          })
+        }
+      });
+      polelineEntity.polyline.coord = positions;
+      this.polelineEntity = polelineEntity;
+      // this.lineSwing();
+    },
+    getBezier(positions) {
+      // input [{x,y,z}] out [x,y,z,x,y,z...]
+      const curvePoints = new Bezier(positions).getLUT();
+      const points = [];
+      curvePoints.map(p => points.push(p.x, p.y, p.z));
+      return points;
+    },
+    lineSwing() {
+      // 线条舞动
+      const polyline = this.polelineEntity.polyline;
+      const oldCoord = polyline.coord;
+      const swingArr = this.swingArr;
+      let height = oldCoord[1].z;
+      let x = oldCoord[1].x;
+      let y = oldCoord[1].y;
+      // height += 1;
+      if (height > 242) {
+        height -= 1;
+        x = swingArr[0].x;
+        y = swingArr[0].y;
+      } else {
+        height += 1;
+        x = swingArr[1].x;
+        y = swingArr[1].y;
+      }
+      const p = { x, y, z: height };
+      const positions = [oldCoord[0], p, oldCoord[2]];
+      console.log(positions);
+      polyline.position = this.getBezier(positions);
+      polyline.coord = positions;
+      requestAnimationFrame(this.lineSwing);
+    },
+    loadFreezeRoad() {
+      const viewer = this.viewer;
+      fetch('srtm_60_05/jn_road.json').then(response => {
+        response.json().then(res => {
+          const RoadPoint = res.data;
+          const polygon = new Cesium.PolygonGeometry({
+            polygonHierarchy: new Cesium.PolygonHierarchy(Cesium.Cartesian3.fromDegreesArray(RoadPoint)),
+            extrudedHeight: 0,
+            height: 3,
+            vertexFormat: Cesium.EllipsoidSurfaceAppearance.VERTEX_FORMAT
+          });
+          const inc = new Cesium.GeometryInstance({
+            geometry: polygon
+          });
+          const Road = new Cesium.Primitive({
+            geometryInstances: [inc],
+            appearance: new Cesium.EllipsoidSurfaceAppearance({
+              aboveGround: true
+            }),
+            show: true
+          });
+          const RoadMaterial = new Cesium.Material({
+            fabric: {
+              type: 'Image',
+              uniforms: {
+                image: 'srtm_60_05/images/ice2.jpg'
+              }
+            }
+          });
+          Road.appearance.material = RoadMaterial;
+          viewer.scene.primitives.add(Road);
+        });
+      });
+    },
+    loadFogByPostProcessStage() {
+      // 暂弃
+      let fogStage = Cesium.PostProcessStageLibrary.createBrightnessStage();
+      // 2 整个场景通过后期渲染变亮 1为保持不变 大于1变亮 0-1变暗 uniforms后面为对应glsl里面定义的uniform参数
+      const brightness = 0;
+      fogStage.uniforms.brightness = brightness;
+      const fs =
+        '  uniform sampler2D colorTexture;\n' +
+        '  uniform sampler2D depthTexture;\n' +
+        '  varying vec2 v_textureCoordinates;\n' +
+        '  void main(void)\n' +
+        '  {\n' +
+        '      vec4 origcolor=texture2D(colorTexture, v_textureCoordinates);\n' +
+        '      vec4 fogcolor=vec4(0.8,0.8,0.8,0.6);\n' +
+        '\n' +
+        '      float depth = czm_readDepth(depthTexture, v_textureCoordinates);\n' +
+        '      vec4 depthcolor=texture2D(depthTexture, v_textureCoordinates);\n' +
+        '\n' +
+        '      float f=(depthcolor.r-0.22)/0.2;\n' +
+        '      if(f<0.0) f=0.0;\n' +
+        '      else if(f>1.0) f=1.0;\n' +
+        '      gl_FragColor = mix(origcolor,fogcolor,f);\n' +
+        '   }';
+      fogStage = new Cesium.PostProcessStage({
+        name: 'self',
+        // sampleMode: PostProcessStageSampleMode.NEAREST, // LINEAR NEAREST
+        fragmentShader: fs
+      });
+      fogStage.colorR = 0.22;
+      fogStage.enabled = true;
+      const viewer = this.viewer;
+      viewer.scene.postProcessStages.add(fogStage);
+      this.animateFog();
+    },
+    animateFog() {
+      const viewer = this.viewer;
+      const fogArr = viewer.scene.postProcessStages._activeStages;
+      if (fogArr.length !== 0) {
+        // viewer.scene.postProcessStages.remove(fogArr[0]);
+        const oldFogStage = fogArr[0];
+        const colorR = oldFogStage.colorR + 0.001;
+        const fs =
+          '  uniform sampler2D colorTexture;\n' +
+          '  uniform sampler2D depthTexture;\n' +
+          '  varying vec2 v_textureCoordinates;\n' +
+          '  void main(void)\n' +
+          '  {\n' +
+          '      vec4 origcolor=texture2D(colorTexture, v_textureCoordinates);\n' +
+          '      vec4 fogcolor=vec4(0.8,0.8,0.8,0.6);\n' +
+          '\n' +
+          '      float depth = czm_readDepth(depthTexture, v_textureCoordinates);\n' +
+          '      vec4 depthcolor=texture2D(depthTexture, v_textureCoordinates);\n' +
+          '\n' +
+          '      float f=(depthcolor.r-' +
+          colorR +
+          ')/0.2;\n' +
+          '      if(f<0.0) f=0.0;\n' +
+          '      else if(f>1.0) f=1.0;\n' +
+          '      gl_FragColor = mix(origcolor,fogcolor,f);\n' +
+          '   }';
+
+        // let fogStage = Cesium.PostProcessStageLibrary.createBrightnessStage();
+        // fogStage = new Cesium.PostProcessStage({
+        //   name: 'self',
+        //   fragmentShader: fs
+        // });
+        // fogStage.enabled = true;
+        oldFogStage._fragmentShader = fs;
+        oldFogStage.colorR = colorR;
+        // viewer.scene.postProcessStages.add(oldFogStage);
+      }
+      requestAnimationFrame(this.animateFog);
+    },
+    loadFotByClass() {
+      const fog = this.viewer.scene.fog;
+      fog.density = 0.0003; // [0.0, 1.0] default 0.0002
+      // fog.screenSpaceErrorFactor = 2; // default 2
+      // fog.minimumBrightness = 0.03; // default 0.03
+      fog.enabled = true;
+      console.log(fog);
     }
   }
 };
