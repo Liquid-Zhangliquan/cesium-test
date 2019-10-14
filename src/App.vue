@@ -6,15 +6,15 @@
 </template>
 
 <script>
-import Cesium from "cesium/Cesium";
-import * as THREE from "three";
-import * as maptalks from "maptalks";
-import { CesiumLayer } from "./lib/maptalks/maptalks.cesium";
-import { ThreeLayer } from "maptalks.three";
-import "cesium/Widgets/widgets.css";
-console.log(THREE)
+import Cesium from 'cesium/Cesium';
+import Bezier from 'bezier-js';
+import * as THREE from 'three';
+import * as maptalks from 'maptalks';
+// import { CesiumLayer } from "./lib/maptalks/maptalks.cesium";
+import { ThreeLayer } from 'maptalks.three';
+import 'cesium/Widgets/widgets.css';
 export default {
-  name: "CesiumScene",
+  name: 'CesiumScene',
   data() {
     return {};
   },
@@ -25,11 +25,11 @@ export default {
     init() {
       this.maptalksInit();
       this.cesiumInit();
+      this.BezierInit();
     },
     maptalksInit() {
-      Cesium.BingMapsApi.defaultKey =
-        "ApD3P1iMWEcs7okcQD2-idlF4bgGLMqF_p6ZKYovVeX80cmjpWzR5EZs9E_I2tXn";
-      const map = new maptalks.Map("maptalks-container", {
+      Cesium.BingMapsApi.defaultKey = 'ApD3P1iMWEcs7okcQD2-idlF4bgGLMqF_p6ZKYovVeX80cmjpWzR5EZs9E_I2tXn';
+      const map = new maptalks.Map('maptalks-container', {
         center: [116.96331820577404, 36.256177496939216], //[-1.25968, 51.74625],//[121.392825741, 31.1456282355],
         zoom: 15,
         pitch: 64,
@@ -43,17 +43,17 @@ export default {
       });
       this.map = map;
 
-      const cesiumLayer = new CesiumLayer("cesium", { gray: false }).addTo(map);
-      //获取cesium scene对象
-      const scene = cesiumLayer.getCesiumScene();
+      // const cesiumLayer = new CesiumLayer("cesium", { gray: false }).addTo(map);
+      // //获取cesium scene对象
+      // const scene = cesiumLayer.getCesiumScene();
 
-      const maptms = new Cesium.createTileMapServiceImageryProvider({
-        url: "maps/vt?lyrs=s@189&gl=cn&x={x}&y={y}&z={z}"
-      });
-      scene.imageryLayers.addImageryProvider(maptms);
+      // const maptms = new Cesium.createTileMapServiceImageryProvider({
+      //   url: "maps/vt?lyrs=s@189&gl=cn&x={x}&y={y}&z={z}"
+      // });
+      // scene.imageryLayers.addImageryProvider(maptms);
 
-      // 加载terrain高程数据
-      scene.terrainProvider = new Cesium.createWorldTerrain();
+      // // 加载terrain高程数据
+      // scene.terrainProvider = new Cesium.createWorldTerrain();
       // const terrainLayer = new Cesium.CesiumTerrainProvider({
       //   url: 'srtm_60_05'
       //   // url: 'http://assets.agi.com/stk-terraub/world',
@@ -64,9 +64,9 @@ export default {
       // this.threeInit();
     },
     threeInit() {
-      const map = this.map
+      const map = this.map;
       // the ThreeLayer to draw smoke
-      var threeLayer = new ThreeLayer("t", {
+      var threeLayer = new ThreeLayer('t', {
         forceRenderOnMoving: true,
         forceRenderOnZooming: true,
         forceRenderOnRotating: true,
@@ -77,20 +77,18 @@ export default {
       var smokeParticles = [];
       // prepare data, load mtl into three scene.
       threeLayer.prepareToDraw = function(gl, scene, camera) {
-        var light = new THREE.DirectionalLight(
-          new THREE.Color("rgb(255, 255, 255)")
-        );
+        var light = new THREE.DirectionalLight(new THREE.Color('rgb(255, 255, 255)'));
         light.position.set(-1, 0, 1);
         scene.add(light);
 
         clock = new THREE.Clock();
         var loader = new THREE.TextureLoader();
 
-        loader.crossOrigin = "";
-        const smokeImg = require('./asset/images/gray-smoke.png')
+        loader.crossOrigin = '';
+        const smokeImg = require('./assets/images/gray-smoke.png');
 
         loader.load(smokeImg, function onLoad(texture) {
-          var smokeGeo = new THREE.PlaneBufferGeometry(50, 50);
+          var smokeGeo = new THREE.PlaneBufferGeometry(250, 250);
 
           var smokeMaterial = new THREE.MeshLambertMaterial({
             map: texture,
@@ -104,9 +102,7 @@ export default {
             var y = extent.ymin + Math.random() * extent.getHeight();
             // var x = extent.xmin + extent.getWidth() / 10 * (p % 10);
             // var y = extent.ymin + extent.getHeight() / 10 * Math.floor(p / 10);
-            var v = threeLayer.coordinateToVector3(
-              new maptalks.Coordinate(x, y)
-            );
+            var v = threeLayer.coordinateToVector3(new maptalks.Coordinate(x, y));
             particle.position.set(v.x, v.y, Math.random() * 360);
 
             particle.rotation.z = Math.random() * 360;
@@ -156,21 +152,17 @@ export default {
         // shouldAnimate : true
       };
 
-      const viewer = new Cesium.Viewer("cesiumContainer", viewerOption);
+      const viewer = new Cesium.Viewer('cesiumContainer', viewerOption);
       viewer.scene.globe.enableLighting = true;
       viewer.scene.globe.depthTestAgainstTerrain = true; // 防止模型漂移
-      viewer._cesiumWidget._creditContainer.style.display = "none"; // 隐藏版权
+      viewer._cesiumWidget._creditContainer.style.display = 'none'; // 隐藏版权
       this.viewer = viewer;
 
       // this.loadImager();
 
       // 飞行至指定位置
       viewer.camera.flyTo({
-        destination: Cesium.Cartesian3.fromDegrees(
-          116.98747630488648,
-          36.23262766434629,
-          2523.9028939870395
-        ),
+        destination: Cesium.Cartesian3.fromDegrees(116.98747630488648, 36.23262766434629, 2523.9028939870395),
         orientation: {
           heading: 5.274448271294485,
           pitch: -0.6991358991569188,
@@ -178,17 +170,28 @@ export default {
         }
       });
     },
+    BezierInit() {
+      const lonlat = [
+        { x: 116.36, y: 30.56, z: 100 },
+        { x: 116.355, y: 30.565, z: 80 },
+        { x: 116.35, y: 30.57, z: 100 }
+      ];
+      const curvePoints = new Bezier(lonlat).getLUT();
+      const points = [];
+      curvePoints.map(p => points.push(p.x, p.y, p.z));
+      console.log(points);
+    },
     loadImager() {
       const viewer = this.viewer;
       // 添加注记
       viewer.imageryLayers.addImageryProvider(
         new Cesium.WebMapTileServiceImageryProvider({
           url:
-            "cva_w/wmts?service=wmts&request=GetTile&version=1.0.0&LAYER=cva&tileMatrixSet=w&TileMatrix={TileMatrix}&TileRow={TileRow}&TileCol={TileCol}&style=default&format=tiles&tk=39a4ceb78b2abd7a076551494f1c4fd0",
-          layer: "tdtAnnoLayer",
-          style: "default",
-          format: "image/jpeg",
-          tileMatrixSetID: "GoogleMapsCompatible",
+            'cva_w/wmts?service=wmts&request=GetTile&version=1.0.0&LAYER=cva&tileMatrixSet=w&TileMatrix={TileMatrix}&TileRow={TileRow}&TileCol={TileCol}&style=default&format=tiles&tk=39a4ceb78b2abd7a076551494f1c4fd0',
+          layer: 'tdtAnnoLayer',
+          style: 'default',
+          format: 'image/jpeg',
+          tileMatrixSetID: 'GoogleMapsCompatible',
           show: false
         })
       );
