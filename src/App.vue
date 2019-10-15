@@ -470,7 +470,72 @@ export default {
       // fog.minimumBrightness = 0.03; // default 0.03
       fog.enabled = true;
       console.log(fog);
-    }
+    },
+    loadFreezeRoadByPrimitive() {
+      const viewer = this.viewer;
+      fetch('srtm_60_05/jn_road.json').then(response => {
+        response.json().then(res => {
+          const RoadPoint = res.data;
+          const polygon = new Cesium.PolygonGeometry({
+            polygonHierarchy: new Cesium.PolygonHierarchy(Cesium.Cartesian3.fromDegreesArrayHeights(RoadPoint)),
+            extrudedHeight: 0,
+            height: 250,
+            vertexFormat: Cesium.EllipsoidSurfaceAppearance.VERTEX_FORMAT
+          });
+          const inc = new Cesium.GeometryInstance({
+            geometry: polygon
+          });
+          const Road = new Cesium.Primitive({
+            geometryInstances: [inc],
+            appearance: new Cesium.EllipsoidSurfaceAppearance({
+              aboveGround: true
+            }),
+            show: true
+          });
+          const a = 0.9;
+          const colorg = new Cesium.Color((a * 3.0) / 255, (a * 42.0) / 255, (a * 111.0) / 255, 1.0);
+          const RoadMaterial = new Cesium.Material({
+            fabric: {
+              // type: 'Image',
+              // uniforms: {
+              //   image: 'srtm_60_05/images/ice2.jpg'
+              // }
+              type: 'Water',
+              uniforms: {
+                baseWaterColor: colorg,
+                specularIntensity: 0.0001,
+                normalMap: 'srtm_60_05/images/riverNormal.jpg',
+                frequency: 500.0,
+                animationSpeed: 0.0,
+                amplitude: 10.0
+              }
+            }
+          });
+          Road.appearance.material = RoadMaterial;
+          viewer.scene.primitives.add(Road);
+        });
+      });
+    },
+    loadFreezeRoadByEntities() {
+      const viewer = this.viewer;
+      fetch('srtm_60_05/jn_road_nh.json').then(response => {
+        response.json().then(res => {
+          const RoadPoint = res.data;
+          // let a = 0.9;
+          // let colorg = new Cesium.Color((a * 3.0) / 255, (a * 42.0) / 255, (a * 111.0) / 255, 1.0);
+          // const RoadMaterial = Cesium.Color.fromCssColorString('#ff0').withAlpha(0.5);
+          const material = new Cesium.ImageMaterialProperty({
+            image: 'srtm_60_05/images/ice1.jpg'
+          });
+          // with height by fromDegreesArrayHeights, no heigt by fromDegreesArray
+          const hierarchy = Cesium.Cartesian3.fromDegreesArray(RoadPoint);
+          const roadEntity = viewer.entities.add({
+            name: 'freezeRoad',
+            polygon: new Cesium.PolygonGraphics({ hierarchy, material })
+          });
+        });
+      });
+    },
   }
 };
 </script>
