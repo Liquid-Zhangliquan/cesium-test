@@ -303,14 +303,48 @@ export default {
       });
       // viewer.trackedEntity = entity;
     },
-    loadLine(positions) {
+     loadLine(positions) {
       // positions [{x,y,z},{x,y,z}...]  points [x,y,z,x,y,z...]
+
+      const me = this;
       const viewer = this.viewer;
-      const points = this.getBezier(positions);
+      const start = Cesium.JulianDate.fromDate(new Date(2019, 10, 16, 12, 0, 0));
+      const midle = Cesium.JulianDate.addSeconds(start, 2, new Cesium.JulianDate());
+      const stop = Cesium.JulianDate.addSeconds(start, 4, new Cesium.JulianDate());
+      viewer.clock.startTime = start.clone();
+      viewer.clock.stopTime = stop.clone();
+      viewer.clock.currentTime = start.clone();
+      viewer.clock.clockRange = Cesium.ClockRange.LOOP_STOP;
+      viewer.clock.multiplier = 1;
+      viewer.clock.shouldAnimate = true;
+      this.wirePositon = new Cesium.CallbackProperty((time, result) => {
+        const currentTime = Cesium.JulianDate.toDate(time);
+        const secood = currentTime.getSeconds();
+        const polyline = me.polelineEntity.polyline;
+        const oldCoord = polyline.coord;
+        const swingArr = me.swingArr;
+        const height = oldCoord[1].z;
+        let x = oldCoord[1].x;
+        let y = oldCoord[1].y;
+        if (secood < 2) {
+          x += 0.0000025;
+          y += 0.0000025;
+          // height += 1
+        } else {
+          x -= 0.0000025;
+          y -= 0.0000025;
+          // height -= 1
+        }
+        const p = { x, y, z: height };
+        const positions1 = [oldCoord[0], p, oldCoord[2]];
+        const points = this.getBezier(positions1);
+        me.polelineEntity.polyline.coord = positions1;
+        return Cesium.Cartesian3.fromDegreesArrayHeights(points);
+      }, false);
       const polelineEntity = viewer.entities.add({
         name: 'Orange line with black outline at height and following the surface',
         polyline: {
-          positions: Cesium.Cartesian3.fromDegreesArrayHeights(points),
+          positions: this.wirePositon,
           width: 2,
           material: new Cesium.PolylineOutlineMaterialProperty({
             color: Cesium.Color.fromBytes(127, 127, 127, 204),
