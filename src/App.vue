@@ -303,7 +303,7 @@ export default {
       });
       // viewer.trackedEntity = entity;
     },
-     loadLine(positions) {
+    addLine(positions) {
       // positions [{x,y,z},{x,y,z}...]  points [x,y,z,x,y,z...]
 
       const me = this;
@@ -357,6 +357,219 @@ export default {
       polelineEntity.polyline.coord = positions;
       this.polelineEntity = polelineEntity;
       // this.lineSwing();
+    },
+    loadTelePoleByData() {
+      const Cartesian = [
+        { x: -2336342.7989116465, y: 4589405.027140834, z: 3750686.555703235 },
+        { x: -2336044.570262557, y: 4589577.91963994, z: 3750677.8739677137 }
+      ];
+      const lnglatheight = [
+        { x: 116.97943135941252, y: 36.24942296439618, z: 232.20968931984262 },
+        { x: 116.97562128548716, y: 36.24929053846515, z: 241.96765896501879 }
+      ];
+      // 同步加载模型
+      const viewer = this.viewer;
+      const url = 'srtm_60_05/电线杆1.glb';
+      Cartesian.forEach((item, index, arr) => {
+        const position = new Cesium.Cartesian3(item.x, item.y, item.z);
+        const heading = Cesium.Math.toRadians(0);
+        const pitch = 0;
+        const roll = 0;
+        const hpr = new Cesium.HeadingPitchRoll(heading, pitch, roll);
+        const orientation = Cesium.Transforms.headingPitchRollQuaternion(position, hpr);
+
+        const entity = viewer.entities.add({
+          name: url,
+          // position, // need depthTestAgainstTerrain = true
+          position: Cesium.Cartesian3.fromDegrees(lnglatheight[index].x, lnglatheight[index].y, lnglatheight[index].z),
+          orientation,
+          model: {
+            uri: url,
+            scale: 0.6,
+            // minimumPixelSize: 200,
+            // maximumScale: 250,
+            runAnimations: true, // 是否显示动画
+            clampAnimations: true, // 是否保持最后一针的动画
+            // color:Cesium.Color.RED,// 颜色
+            color: Cesium.Color.fromAlpha(Cesium.Color.RED, parseFloat(1.0)), // 包含透明度的颜色
+            colorBlendMode: Cesium.ColorBlendMode.MIX, // 常用的有三个HIGHLIGHT,REPLACE,MIX
+            colorBlendAmount: 0.1 // 这个属性必须是MIX混合属性才能生效,见colorBlendMode
+          }
+        });
+      });
+    },
+    loadLineByData() {
+      const me = this;
+      const viewer = this.viewer;
+      const start = Cesium.JulianDate.fromDate(new Date(2019, 10, 16, 12, 0, 0));
+      const midle = Cesium.JulianDate.addSeconds(start, 2, new Cesium.JulianDate());
+      const stop = Cesium.JulianDate.addSeconds(start, 4, new Cesium.JulianDate());
+      viewer.clock.startTime = start.clone();
+      viewer.clock.stopTime = stop.clone();
+      viewer.clock.currentTime = start.clone();
+      viewer.clock.clockRange = Cesium.ClockRange.LOOP_STOP;
+      viewer.clock.multiplier = 1;
+      viewer.clock.shouldAnimate = true;
+      const startPoints = [
+        116.97943135941252,
+        36.24942296439618,
+        232.20968931984262,
+        116.97945241815192,
+        36.24936083927869,
+        232.33457102495984,
+        116.97942305031313,
+        36.249492237446425,
+        231.74044207730992
+      ];
+      const endPoints = [
+        116.97562128548716,
+        36.24929053846515,
+        241.96765896501879,
+        116.97562199183655,
+        36.24922231811628,
+        242.11267302880728,
+        116.97561889320934,
+        36.24935343993917,
+        241.8326815307327
+      ];
+      const linePath1 = [
+        { x: startPoints[0], y: startPoints[1], z: startPoints[2] + 44 },
+        {
+          x: (startPoints[0] + endPoints[0]) / 2,
+          y: (startPoints[1] + endPoints[1]) / 2,
+          z: (startPoints[2] + endPoints[2]) / 2 + 20
+        },
+        { x: endPoints[0], y: endPoints[1], z: endPoints[2] + 44 }
+      ];
+      const linePath2 = [
+        { x: startPoints[3], y: startPoints[4], z: startPoints[5] + 44 },
+        {
+          x: (startPoints[3] + endPoints[3]) / 2,
+          y: (startPoints[4] + endPoints[4]) / 2,
+          z: (startPoints[5] + endPoints[5]) / 2 + 20
+        },
+        { x: endPoints[3], y: endPoints[4], z: endPoints[5] + 44 }
+      ];
+      const linePath3 = [
+        { x: startPoints[6], y: startPoints[7], z: startPoints[8] + 44 },
+        {
+          x: (startPoints[6] + endPoints[6]) / 2,
+          y: (startPoints[7] + endPoints[7]) / 2,
+          z: (startPoints[8] + endPoints[8]) / 2 + 20
+        },
+        { x: endPoints[6], y: endPoints[7], z: endPoints[8] + 44 }
+      ];
+      const PATH = [linePath1, linePath2, linePath3];
+      const wirePositon1 = new Cesium.CallbackProperty((time, result) => {
+        const currentTime = Cesium.JulianDate.toDate(time);
+        const secood = currentTime.getSeconds();
+        const polyline = me.polelineEntity1.polyline;
+        const oldCoord = polyline.coord;
+        const height = oldCoord[1].z;
+        let x = oldCoord[1].x;
+        let y = oldCoord[1].y;
+        if (secood < 2) {
+          x += 0.0000025;
+          y += 0.0000025;
+        } else {
+          x -= 0.0000025;
+          y -= 0.0000025;
+        }
+        const p = { x, y, z: height };
+        const positions = [oldCoord[0], p, oldCoord[2]];
+        const points = me.getBezier(positions);
+        me.polelineEntity1.polyline.coord = positions;
+        return Cesium.Cartesian3.fromDegreesArrayHeights(points);
+      }, false);
+      const polelineEntity1 = viewer.entities.add({
+        name: 'Orange line with black outline at height and following the surface',
+        polyline: {
+          positions: wirePositon1,
+          width: 2,
+          material: new Cesium.PolylineOutlineMaterialProperty({
+            color: Cesium.Color.fromBytes(127, 127, 127, 204),
+            outlineWidth: 1,
+            arcType: Cesium.ArcType.RHUMB,
+            outlineColor: Cesium.Color.fromBytes(127, 127, 127, 204)
+          })
+        }
+      });
+      polelineEntity1.polyline.coord = PATH[0];
+      me.polelineEntity1 = polelineEntity1;
+
+      const wirePositon2 = new Cesium.CallbackProperty((time, result) => {
+        const currentTime = Cesium.JulianDate.toDate(time);
+        const secood = currentTime.getSeconds();
+        const polyline = me.polelineEntity2.polyline;
+        const oldCoord = polyline.coord;
+        const height = oldCoord[1].z;
+        let x = oldCoord[1].x;
+        let y = oldCoord[1].y;
+        if (secood < 2) {
+          x += 0.0000025;
+          y += 0.0000025;
+        } else {
+          x -= 0.0000025;
+          y -= 0.0000025;
+        }
+        const p = { x, y, z: height };
+        const positions = [oldCoord[0], p, oldCoord[2]];
+        const points = this.getBezier(positions);
+        me.polelineEntity2.polyline.coord = positions;
+        return Cesium.Cartesian3.fromDegreesArrayHeights(points);
+      }, false);
+      const polelineEntity2 = viewer.entities.add({
+        name: 'Orange line with black outline at height and following the surface',
+        polyline: {
+          positions: wirePositon2,
+          width: 2,
+          material: new Cesium.PolylineOutlineMaterialProperty({
+            color: Cesium.Color.fromBytes(127, 127, 127, 204),
+            outlineWidth: 1,
+            arcType: Cesium.ArcType.RHUMB,
+            outlineColor: Cesium.Color.fromBytes(127, 127, 127, 204)
+          })
+        }
+      });
+      polelineEntity2.polyline.coord = PATH[1];
+      me.polelineEntity2 = polelineEntity2;
+
+      const wirePositon3 = new Cesium.CallbackProperty((time, result) => {
+        const currentTime = Cesium.JulianDate.toDate(time);
+        const secood = currentTime.getSeconds();
+        const polyline = me.polelineEntity3.polyline;
+        const oldCoord = polyline.coord;
+        const height = oldCoord[1].z;
+        let x = oldCoord[1].x;
+        let y = oldCoord[1].y;
+        if (secood < 2) {
+          x += 0.0000025;
+          y += 0.0000025;
+        } else {
+          x -= 0.0000025;
+          y -= 0.0000025;
+        }
+        const p = { x, y, z: height };
+        const positions = [oldCoord[0], p, oldCoord[2]];
+        const points = this.getBezier(positions);
+        me.polelineEntity3.polyline.coord = positions;
+        return Cesium.Cartesian3.fromDegreesArrayHeights(points);
+      }, false);
+      const polelineEntity3 = viewer.entities.add({
+        name: 'Orange line with black outline at height and following the surface',
+        polyline: {
+          positions: wirePositon3,
+          width: 2,
+          material: new Cesium.PolylineOutlineMaterialProperty({
+            color: Cesium.Color.fromBytes(127, 127, 127, 204),
+            outlineWidth: 1,
+            arcType: Cesium.ArcType.RHUMB,
+            outlineColor: Cesium.Color.fromBytes(127, 127, 127, 204)
+          })
+        }
+      });
+      polelineEntity3.polyline.coord = PATH[2];
+      me.polelineEntity3 = polelineEntity3;
     },
     getBezier(positions) {
       // input [{x,y,z}] out [x,y,z,x,y,z...]
